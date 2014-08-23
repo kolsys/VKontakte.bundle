@@ -1,22 +1,45 @@
 # -*- coding: utf-8 -*-
 
+# Copyright (c) 2014, KOL
+# All rights reserved.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the <organization> nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 from urllib import urlencode
 from datetime import date
 
 PREFIX_V = '/video/vkontakte'
 PREFIX_M = '/music/vkontakte'
 
-# make sure to replace artwork with what you want
-# these filenames reference the example files in
-# the Contents/Resources/ folder in the bundle
 ART = 'art-default.jpg'
 ICON = 'icon-default.png'
+TITLE = L('Title')
 
 VK_APP_ID = 4510304
 VK_APP_SECRET = 'H4uZCbIucFgmsHKprXla'
 VK_APP_SCOPE = 'audio,video,groups,friends'
 VK_VERSION = '5.24'
-VK_LIMIT = 5
+VK_LIMIT = 50
 
 
 ###############################################################################
@@ -61,83 +84,33 @@ def VideoMainMenu():
     if not Dict['token']:
         return ObjectContainer(header=L('Error'), message=GetBadAuthMessage())
 
-    oc = ObjectContainer(title2=L('VideoTitle'), no_cache=True)
+    oc = ObjectContainer(title2=TITLE, no_cache=True)
     oc.add(DirectoryObject(
-        key=Callback(ListGroups, title=L('My groups')),
+        key=Callback(VideoListGroups, uid=Dict['user_id']),
         title=L('My groups')
     ))
     oc.add(DirectoryObject(
-        key=Callback(ListFriends, title=L('My friends')),
+        key=Callback(VideoListFriends, uid=Dict['user_id']),
         title=L('My friends')
-    ))
-
-    oc.add(DirectoryObject(
-        key=Callback(VideoList, uid=Dict['user_id'], title=L('My videos')),
-        title=L('My videos')
     ))
 
     return AddVideoAlbums(oc, Dict['user_id'])
 
 
 @route(PREFIX_V + '/groups')
-def ListGroups():
-    return Notimplemented()
+def VideoListGroups(uid, offset=0):
+    return GetGroups(VideoAlbums, VideoListGroups, uid, offset);
 
 
 @route(PREFIX_V + '/friends')
-def ListFriends():
-    return Notimplemented()
+def VideoListFriends(uid, offset=0):
+    return GetFriends(VideoAlbums, VideoListFriends, uid, offset)
 
 
 @route(PREFIX_V + '/albums')
-def VideoAlbums(uid, title, offset):
-    oc = ObjectContainer(title2=title, replace_parent=(offset>0))
+def VideoAlbums(uid, title, offset=0):
+    oc = ObjectContainer(title2=u'%s' % title, replace_parent=(offset>0))
     return AddVideoAlbums(oc, uid, offset)
-
-
-def AddVideoAlbums(oc, uid, offset=0):
-
-    # Fill albums first
-    albums = ApiRequest('video.getAlbums', {
-        'owner_id': uid,
-        'extended': 1,
-        'count': VK_LIMIT,
-        'offset': offset
-    })
-
-    if albums and albums['count'] and len(albums['items']) > 0:
-        for item in albums['items']:
-            videos = item['count']
-            #display playlist title and number of videos
-            title = u'%s: %s (%d videos)' % (L('Album'), item['title'], videos)
-            if 'photo_320' in item:
-                thumb = item['photo_320']
-            else:
-                thumb = R(ICON)
-
-            oc.add(DirectoryObject(
-                key=Callback(
-                    VideoList, uid=uid,
-                    title=u'%s' % item['title'],
-                    album_id=item['id']
-                ),
-                title=title,
-                thumb=thumb
-            ))
-
-        offset = int(offset)+VK_LIMIT
-        if offset < albums['count']:
-            oc.add(NextPageObject(
-                key=Callback(
-                    VideoAlbums,
-                    uid=uid,
-                    title=oc.title2,
-                    offset=offset
-                ),
-                title=L('More albums')
-            ))
-
-    return oc
 
 
 @route(PREFIX_V + '/list')
@@ -153,22 +126,18 @@ def VideoList(uid, title, album_id=0, offset=0):
     if not res or not res['count']:
         return ObjectContainer(
             header=L('Error'),
-            message=L('This feed does not contain any entries')
+            message=L('No entries found')
         )
 
     oc = ObjectContainer(title2=(u'%s' % title), replace_parent=(offset > 0))
 
     for item in res['items']:
-        # External flash player
-        oc.add(VideoClipObject(
-            key=Callback(VideoView, info=JSON.StringFromObject(item)),
-            rating_key=item['player'],
-            title=u'%s' % item['title'],
-            summary=item['description'],
-            thumb=item['photo_320'],
-            originally_available_at=date.fromtimestamp(item['date']),
-            duration=(item['duration']*1000),
-        ))
+        try:
+            vco = GetVideoObject(item)
+            oc.add(vco)
+        except Exception as e:
+            if hasattr(e, 'status'):
+                Log.Warn('Can\'t add video to list: %s', e.status)
 
     offset = int(offset)+VK_LIMIT
     if offset < res['count']:
@@ -186,70 +155,270 @@ def VideoList(uid, title, album_id=0, offset=0):
     return oc
 
 
-@route(PREFIX_V + '/video/view')
-def VideoView(info, include_container=True):
+@route(PREFIX_V + '/play')
+def VideoPlay(info):
 
     item = JSON.ObjectFromString(info)
-    files = sorted(item['files'], reverse=True)
-    thumb = item['photo_130']
 
-    if include_container:
-        thumb = item['photo_320']
+    if not item:
+        raise Ex.MediaNotAvailable
 
+    return ObjectContainer(objects=[GetVideoObject(item)])
+
+
+def AddVideoAlbums(oc, uid, offset=0):
+    albums = ApiRequest('video.getAlbums', {
+        'owner_id': uid,
+        'extended': 1,
+        'count': VK_LIMIT,
+        'offset': offset
+    })
+
+    has_albums = albums and albums['count']
+    offset = int(offset)
+
+    if not offset:
+        if not has_albums and not len(oc.objects):
+            return VideoList(uid=uid, title=L('All videos'))
+        else:
+            oc.add(DirectoryObject(
+                key=Callback(
+                    VideoList, uid=uid,
+                    title=L('All videos'),
+                ),
+                title=L('All videos'),
+            ))
+
+
+    if has_albums:
+        for item in albums['items']:
+            # display playlist title and number of videos
+            title = u'%s: %s (%d)' % (L('Album'), item['title'], item['count'])
+            if 'photo_320' in item:
+                thumb = item['photo_320']
+            else:
+                thumb = R(ICON)
+
+            oc.add(DirectoryObject(
+                key=Callback(
+                    VideoList, uid=uid,
+                    title=u'%s' % item['title'],
+                    album_id=item['id']
+                ),
+                title=title,
+                thumb=thumb
+            ))
+
+        offset = offset+VK_LIMIT
+        if offset < albums['count']:
+            oc.add(NextPageObject(
+                key=Callback(
+                    VideoAlbums,
+                    uid=uid,
+                    title=oc.title2,
+                    offset=offset
+                ),
+                title=L('More albums')
+            ))
+
+    return oc
+
+def GetVideoObject(item):
     if 'external' in item['files']:
-        vco = VideoClipObject(
-            url=NormalizeExternalUrl(item['files']['external']),
-            title=u'%s' % item['title'],
-            summary=item['description'],
-            thumb=thumb,
-            originally_available_at=date.fromtimestamp(item['date']),
-            duration=(item['duration']*1000)
-        )
-        Log.Debug('External url: %s' % vco.url)
-    else:
-        vco = VideoClipObject(
-            key=Callback(VideoView, info=info, include_container=False),
-            rating_key=item['player'],
-            title=u'%s' % item['title'],
-            summary=item['description'],
-            thumb=thumb,
-            originally_available_at=date.fromtimestamp(item['date']),
-            duration=(item['duration']*1000),
-            items=[
-                MediaObject(
-                    parts=[PartObject(key=Callback(
-                        PlayVideo,
-                        url=item['files'][resolution],
-                        post_url=item['player']
-                    ))],
-                    video_resolution=resolution.replace('mp4_', ''),
-                    container=Container.MP4,
-                    video_codec=VideoCodec.H264,
-                    audio_codec=AudioCodec.AAC,
-                    audio_channels=2,
-                    optimized_for_streaming=True
-                ) for resolution in files
-            ]
+        return URLService.MetadataObjectForURL(
+            NormalizeExternalUrl(item['files']['external'])
         )
 
-    if (include_container):
-        return ObjectContainer(title2=vco.title, objects=[vco])
+    return VideoClipObject(
+        key=Callback(
+            VideoPlay,
+            info=JSON.StringFromObject(item)
+        ),
+        rating_key=item['player'],
+        title=u'%s' % item['title'],
+        source_title=TITLE,
+        summary=item['description'],
+        thumb=item['photo_320'],
+        source_icon=R(ICON),
+        originally_available_at=date.fromtimestamp(item['date']),
+        duration=(item['duration']*1000),
+        items=[
+            MediaObject(
+                parts=[PartObject(
+                    key=item['files'][r]
+                )],
+                video_resolution=r.replace('mp4_', ''),
+                container=Container.MP4,
+                video_codec=VideoCodec.H264,
+                audio_codec=AudioCodec.AAC,
+                optimized_for_streaming=True
+            ) for r in sorted(item['files'], reverse=True) if 'mp4_' in r
+        ]
+    )
 
-    return vco
+
+###############################################################################
+# Music
+###############################################################################
+
+@handler(PREFIX_M, L('MusicTitle'), R(ART), R(ICON))
+def MusicMainMenu():
+    if not Dict['token']:
+        return ObjectContainer(header=L('Error'), message=GetBadAuthMessage())
+
+    oc = ObjectContainer(title2=TITLE, no_cache=True)
+    oc.add(DirectoryObject(
+        key=Callback(MusicListGroups, uid=Dict['user_id']),
+        title=L('My groups')
+    ))
+    oc.add(DirectoryObject(
+        key=Callback(MusicListFriends, uid=Dict['user_id']),
+        title=L('My friends')
+    ))
+
+    return AddMusicAlbums(oc, Dict['user_id'])
 
 
-@route(PREFIX_V + '/video/play')
-@indirect
-def PlayVideo(url=None, **kwargs):
-    if not url:
-        return None
+@route(PREFIX_M + '/groups')
+def MusicListGroups(uid, offset=0):
+    return GetGroups(MusicAlbums, MusicListGroups, uid, offset)
 
-    return IndirectResponse(VideoClipObject, key=url)
 
+@route(PREFIX_M + '/friends')
+def MusicListFriends(uid, offset=0):
+    return GetFriends(MusicAlbums, MusicListFriends, uid, offset)
+
+
+@route(PREFIX_M + '/albums')
+def MusicAlbums(uid, title, offset=0):
+    oc = ObjectContainer(title2=u'%s' % title, replace_parent=(offset>0))
+    return AddMusicAlbums(oc, uid, offset)
+
+
+@route(PREFIX_M + '/list')
+def MusicList(uid, title, album_id=0, offset=0):
+    res = ApiRequest('audio.get', {
+        'owner_id': uid,
+        'album_id': album_id,
+        'count': VK_LIMIT,
+        'offset': offset
+    })
+
+    if not res or not res['count']:
+        return ObjectContainer(
+            header=L('Error'),
+            message=L('No entries found')
+        )
+
+    oc = ObjectContainer(title2=(u'%s' % title), replace_parent=(offset > 0))
+
+    for item in res['items']:
+        oc.add(GetTrackObject(item))
+
+    offset = int(offset)+VK_LIMIT
+    if offset < res['count']:
+        oc.add(NextPageObject(
+            key=Callback(
+                MusicList,
+                uid=uid,
+                title=title,
+                album_id=album_id,
+                offset=offset
+            ),
+            title=L('Next page')
+        ))
+
+    return oc
+
+
+@route(PREFIX_M + '/play')
+def MusicPlay(info):
+
+    item = JSON.ObjectFromString(info)
+
+    if not item:
+        raise Ex.MediaNotAvailable
+
+    return ObjectContainer(objects=[GetTrackObject(item)])
+
+
+def AddMusicAlbums(oc, uid, offset=0):
+
+    albums = ApiRequest('audio.getAlbums', {
+        'owner_id': uid,
+        'count': VK_LIMIT,
+        'offset': offset
+    })
+
+    has_albums = albums and albums['count']
+    offset = int(offset)
+
+    if not offset:
+        if not has_albums and not len(oc.objects):
+            return MusicList(uid=uid, title=L('All videos'))
+        else:
+            oc.add(PlaylistObject(
+                key=Callback(
+                    MusicList, uid=uid,
+                    title=L('All tracks'),
+                ),
+                title=L('All tracks'),
+            ))
+
+    if has_albums:
+        for item in albums['items']:
+            # display playlist title and number of videos
+            title = u'%s: %s' % (L('Album'), item['title'])
+
+            oc.add(PlaylistObject(
+                key=Callback(
+                    MusicList, uid=uid,
+                    title=u'%s' % item['title'],
+                    album_id=item['id']
+                ),
+                title=title,
+            ))
+
+        offset = offset+VK_LIMIT
+        if offset < albums['count']:
+            oc.add(NextPageObject(
+                key=Callback(
+                    MusicAlbums,
+                    uid=uid,
+                    title=oc.title2,
+                    offset=offset
+                ),
+                title=L('More albums')
+            ))
+
+    return oc
+
+def GetTrackObject(item):
+    return TrackObject(
+        key=Callback(MusicPlay, info=JSON.StringFromObject(item)),
+        rating_key=item['url'],
+        title=u'%s' % item['title'],
+        artist=u'%s' % item['artist'],
+        duration=int(item['duration'])*1000,
+        items=[
+            MediaObject(
+                parts=[PartObject(key=item['url'])],
+                container=Container.MP3,
+                audio_codec=AudioCodec.MP3
+            )
+        ]
+
+    )
+
+
+###############################################################################
+# Common
+###############################################################################
 
 def NormalizeExternalUrl(url):
+    # Rutube service crutch
     if Regex('//rutube.ru/[^/]+/embed/[0-9]+').search(url):
-        url = HTML.ElementFromURL(url).xpath(
+        url = HTML.ElementFromURL(url, cacheTime=CACHE_1WEEK).xpath(
             '//link[contains(@rel, "canonical")]'
         )
         if url:
@@ -258,23 +427,87 @@ def NormalizeExternalUrl(url):
     return url
 
 
-###############################################################################
-# Music
-###############################################################################
-@handler(PREFIX_M, L('MusicTitle'), R(ART), R(ICON))
-def MusicMainMenu():
-    if not Dict['token']:
-        return ObjectContainer(header=L('Error'), message=GetBadAuthMessage())
+def GetGroups(callback_action, callback_page, uid, offset):
+    '''Get groups container with custom callback'''
+    oc = ObjectContainer(title2=L('My groups'), replace_parent=(offset>0))
+    groups = ApiRequest('groups.get', {
+        'user_id': uid,
+        'extended': 1,
+        'count': VK_LIMIT,
+        'offset': offset
+    })
+    if groups and groups['count']:
+        for item in groups['items']:
+            title = u'%s' % item['name']
+            if 'photo_200' in item:
+                thumb = item['photo_200']
+            else:
+                thumb = R(ICON)
 
-    oc = ObjectContainer(title2=L('MusicTitle'), no_cache=True)
-    oc.add(DirectoryObject(
-        key=Callback(ListGroups, title=L('My groups')),
-        title=L('My groups')
-    ))
+            oc.add(DirectoryObject(
+                key=Callback(
+                    callback_action,
+                    uid=(item['id']*-1),
+                    title=title,
+                ),
+                title=title,
+                thumb=thumb
+            ))
+
+        offset = int(offset)+VK_LIMIT
+        if offset < groups['count']:
+            oc.add(NextPageObject(
+                key=Callback(
+                    callback_page,
+                    uid=uid,
+                    offset=offset
+                ),
+                title=L('More groups')
+            ))
+
+    return oc
 
 
-def SearchResults(sender, query=None):
-    return Notimplemented()
+def GetFriends(callback_action, callback_page, uid, offset):
+    '''Get friends container with custom callback'''
+    oc = ObjectContainer(title2=L('My friends'), replace_parent=(offset>0))
+    friends = ApiRequest('friends.get', {
+        'user_id': uid,
+        'fields': 'photo_200_orig',
+        'order': 'hints',
+        'count': VK_LIMIT,
+        'offset': offset
+    })
+    if friends and friends['count']:
+        for item in friends['items']:
+            title = u'%s %s' % (item['first_name'], item['last_name'])
+            if 'photo_200_orig' in item:
+                thumb = item['photo_200_orig']
+            else:
+                thumb = R(ICON)
+
+            oc.add(DirectoryObject(
+                key=Callback(
+                    callback_action,
+                    uid=item['id'],
+                    title=title,
+                ),
+                title=title,
+                thumb=thumb
+            ))
+
+        offset = int(offset)+VK_LIMIT
+        if offset < friends['count']:
+            oc.add(NextPageObject(
+                key=Callback(
+                    callback_page,
+                    uid=uid,
+                    offset=offset
+                ),
+                title=L('Nex page')
+            ))
+
+    return oc
 
 
 def Notimplemented():
@@ -291,9 +524,8 @@ def ApiRequest(method, params):
     params['v'] = VK_VERSION
     res = JSON.ObjectFromURL(
         'https://api.vk.com/method/%s?%s' % (method, urlencode(params)),
-        cacheTime=1
     )
-    Log.Debug(res)
+
     if res and ('response' in res):
         return res['response']
 
@@ -311,8 +543,6 @@ def CheckToken():
         'v': VK_VERSION
     })
     res = JSON.ObjectFromURL(url)
-
-    Log.Debug(res)
 
     if res and ('access_token' in res):
         Dict['token'] = res['access_token']
