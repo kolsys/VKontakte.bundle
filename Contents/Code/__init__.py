@@ -136,8 +136,10 @@ def VideoList(uid, title, album_id=0, offset=0):
             vco = GetVideoObject(item)
             oc.add(vco)
         except Exception as e:
-            if hasattr(e, 'status'):
+            try:
                 Log.Warn('Can\'t add video to list: %s', e.status)
+            except:
+                continue
 
     offset = int(offset)+VK_LIMIT
     if offset < res['count']:
