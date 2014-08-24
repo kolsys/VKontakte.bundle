@@ -1,7 +1,7 @@
 VKontakte Plex Plugin
 =====
 
-VKontakte Plex Plugin allows to browse media content from largest russian social networking service VKontakte (http://vk.com/) using Plex Media Center (http://plex.tv/).
+VKontakte Plex Plugin allows to browse media content from largest russian social networking service [VKontakte](http://vk.com/) using [Plex Media Center](http://plex.tv/).
 
 
 Current status
@@ -15,11 +15,7 @@ Current status
 Installation
 -------
 
-You can install it using UnSupportedAppstore plugin https://forums.plex.tv/index.php/topic/25523-unsupported-as-in-totally-unofficial-appstore/
-
-or manualy
-
-https://support.plex.tv/hc/en-us/articles/201187656-How-do-I-manually-install-a-channel-
+You can install it using [UnSupported AppStore](https://forums.plex.tv/index.php/topic/25523-unsupported-as-in-totally-unofficial-appstore/) plugin or [manualy](https://support.plex.tv/hc/en-us/articles/201187656-How-do-I-manually-install-a-channel-)
 
 
 License
