@@ -11,5 +11,18 @@
         "label": "Password",
         "default": "",
         "option": "hidden"
+    },
+    {
+        "id": "search_hd",
+        "type": "bool",
+        "label": "Search HD only",
+        "default": "true",
+    },
+    {
+        "id": "search_adult",
+        "type": "bool",
+        "label": "Allow search adult",
+        "default": "false",
     }
+
 ]

@@ -1,7 +1,7 @@
 VKontakte Plex Plugin
 =====
 
-VKontakte Plex Plugin allows to browse media content from largest russian social networking service [VKontakte](http://vk.com/) using [Plex Media Center](http://plex.tv/).
+VKontakte Plex Plugin allows to browse media content from largest russian social networking service [VKontakte](http://vk.com/) using [Plex Media Server](http://plex.tv/).
 
 
 Current status
@@ -10,6 +10,7 @@ Current status
 * Support video and music
 * Support albums
 * Support friends and groups media content
+* Support video and music searching
 
 
 Installation

@@ -94,6 +94,11 @@ def VideoMainMenu():
         title=L('My friends')
     ))
 
+    oc.add(InputDirectoryObject(
+        key=Callback(Search, search_type='video', title=L('Search Video')),
+        title=L('Search'), prompt=L('Search Video')
+    ))
+
     return AddVideoAlbums(oc, Dict['user_id'])
 
 
@@ -278,6 +283,11 @@ def MusicMainMenu():
         title=L('My friends')
     ))
 
+    oc.add(InputDirectoryObject(
+        key=Callback(Search, search_type='audio', title=L('Search Music')),
+        title=L('Search'), prompt=L('Search Music')
+    ))
+
     return AddMusicAlbums(oc, Dict['user_id'])
 
 
@@ -417,6 +427,54 @@ def GetTrackObject(item):
 # Common
 ###############################################################################
 
+def Search(query, title=L('Search'), search_type='video', offset=0):
+
+    is_video = search_type == 'video'
+
+    params = {
+        'sort': 2,
+        'offset': offset,
+        'count': VK_LIMIT,
+        'q': query
+    }
+
+    if is_video:
+        if Prefs['search_hd']:
+            params['hd'] = 1
+        if Prefs['search_adult']:
+            params['adult'] = 1
+
+    res = ApiRequest(search_type+'.search', params)
+
+    if not res or not res['count']:
+        return ObjectContainer(
+            header=L('Error'),
+            message=L('No entries found')
+        )
+
+    oc = ObjectContainer(title2=(u'%s' % title), replace_parent=(offset > 0))
+
+    method = GetVideoObject if is_video else GetTrackObject
+
+    for item in res['items']:
+        oc.add(method(item))
+
+    offset = int(offset)+VK_LIMIT
+    if offset < res['count']:
+        oc.add(NextPageObject(
+            key=Callback(
+                Search,
+                query=query,
+                title=title,
+                search_type=search_type,
+                offset=offset
+            ),
+            title=L('Next page')
+        ))
+
+    return oc
+
+
 def NormalizeExternalUrl(url):
     # Rutube service crutch
     if Regex('//rutube.ru/[^/]+/embed/[0-9]+').search(url):
@@ -510,15 +568,6 @@ def GetFriends(callback_action, callback_page, uid, offset):
             ))
 
     return oc
-
-
-def Notimplemented():
-    return MessageContainer(
-        L('Not implemented'),
-        L('In real life, you would probably perform some search using ' +
-            'python\nand then build a MediaContainer with items\nfor ' +
-            'the results')
-    )
 
 
 def ApiRequest(method, params):
