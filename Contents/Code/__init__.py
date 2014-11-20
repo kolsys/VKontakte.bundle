@@ -134,7 +134,11 @@ def VideoList(uid, title, album_id=0, offset=0):
             message=L('No entries found')
         )
 
-    oc = ObjectContainer(title2=(u'%s' % title), replace_parent=(offset > 0))
+    oc = ObjectContainer(
+        title2=(u'%s' % title),
+        content=ContainerContent.GenericVideos,
+        replace_parent=(offset > 0)
+    )
 
     for item in res['items']:
         try:
@@ -170,7 +174,10 @@ def VideoPlay(info):
     if not item:
         raise Ex.MediaNotAvailable
 
-    return ObjectContainer(objects=[GetVideoObject(item)])
+    return ObjectContainer(
+        objects=[GetVideoObject(item)],
+        content=ContainerContent.GenericVideos
+    )
 
 
 def AddVideoAlbums(oc, uid, offset=0):
@@ -322,7 +329,11 @@ def MusicList(uid, title, album_id=0, offset=0):
             message=L('No entries found')
         )
 
-    oc = ObjectContainer(title2=(u'%s' % title), replace_parent=(offset > 0))
+    oc = ObjectContainer(
+        title2=(u'%s' % title),
+        content=ContainerContent.Tracks,
+        replace_parent=(offset > 0)
+    )
 
     for item in res['items']:
         oc.add(GetTrackObject(item))
@@ -351,7 +362,10 @@ def MusicPlay(info):
     if not item:
         raise Ex.MediaNotAvailable
 
-    return ObjectContainer(objects=[GetTrackObject(item)])
+    return ObjectContainer(
+        objects=[GetTrackObject(item)],
+        content=ContainerContent.Tracks
+    )
 
 
 def AddMusicAlbums(oc, uid, offset=0):
@@ -367,7 +381,7 @@ def AddMusicAlbums(oc, uid, offset=0):
 
     if not offset:
         if not has_albums and not len(oc.objects):
-            return MusicList(uid=uid, title=L('All videos'))
+            return MusicList(uid=uid, title=L('All tracks'))
         else:
             oc.add(PlaylistObject(
                 key=Callback(
@@ -452,9 +466,17 @@ def Search(query, title=L('Search'), search_type='video', offset=0):
             message=L('No entries found')
         )
 
-    oc = ObjectContainer(title2=(u'%s' % title), replace_parent=(offset > 0))
+    oc = ObjectContainer(
+        title2=(u'%s' % title),
+        replace_parent=(offset > 0),
+    )
 
-    method = GetVideoObject if is_video else GetTrackObject
+    if is_video:
+        method = GetVideoObject
+        oc.content = ContainerContent.GenericVideos
+    else:
+        method = GetTrackObject
+        oc.content = ContainerContent.Tracks
 
     for item in res['items']:
         oc.add(method(item))
