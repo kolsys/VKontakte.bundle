@@ -248,7 +248,7 @@ def GetVideoObject(item):
             VideoPlay,
             info=JSON.StringFromObject(item)
         ),
-        rating_key=item['player'],
+        rating_key='%s.%s' % (Plugin.Identifier, item['id']),
         title=u'%s' % item['title'],
         source_title=TITLE,
         summary=item['description'],
@@ -422,7 +422,7 @@ def AddMusicAlbums(oc, uid, offset=0):
 def GetTrackObject(item):
     return TrackObject(
         key=Callback(MusicPlay, info=JSON.StringFromObject(item)),
-        rating_key=item['url'],
+        rating_key='%s.%s' % (Plugin.Identifier, item['id']),
         title=u'%s' % item['title'],
         artist=u'%s' % item['artist'],
         duration=int(item['duration'])*1000,
