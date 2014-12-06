@@ -4,6 +4,9 @@ VKontakte Plex Plugin
 VKontakte Plex Plugin allows to browse media content from largest russian social networking service [VKontakte](http://vk.com/) using [Plex Media Server](http://plex.tv/).
 
 
+[![Donate](https://www.paypalobjects.com/en_US/RU/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=27YXJGA4W5VP4&lc=RU&item_name=KOL%27s%20Plex%20VKontakte%20Plugin&item_number=VKontakte%2ebundle&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted "Donate for project support")
+
+
 Current status
 -------
 
