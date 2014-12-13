@@ -167,9 +167,21 @@ def VideoList(uid, title, album_id=0, offset=0):
 
 
 @route(PREFIX_V + '/play')
-def VideoPlay(info):
+def VideoPlay(uid, vid):
 
-    item = JSON.ObjectFromString(info)
+    res = ApiRequest('video.get', {
+        'owner_id': uid,
+        'videos': '%s_%s' % (uid, vid),
+        'width': 320,
+    })
+
+    if not res or not res['count']:
+        return ObjectContainer(
+            header=L('Error'),
+            message=L('No entries found')
+        )
+
+    item = res['items'][0]
 
     if not item:
         raise Ex.MediaNotAvailable
@@ -246,7 +258,8 @@ def GetVideoObject(item):
     return VideoClipObject(
         key=Callback(
             VideoPlay,
-            info=JSON.StringFromObject(item)
+            uid=item['owner_id'],
+            vid=item['id']
         ),
         rating_key='%s.%s' % (Plugin.Identifier, item['id']),
         title=u'%s' % item['title'],
