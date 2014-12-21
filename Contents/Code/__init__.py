@@ -368,20 +368,6 @@ def MusicList(uid, title, album_id=0, offset=0):
     return oc
 
 
-@route(PREFIX_M + '/play')
-def MusicPlay(info):
-
-    item = JSON.ObjectFromString(info)
-
-    if not item:
-        raise Ex.MediaNotAvailable
-
-    return ObjectContainer(
-        objects=[GetTrackObject(item)],
-        content=ContainerContent.Tracks
-    )
-
-
 def AddMusicAlbums(oc, uid, offset=0):
 
     albums = ApiRequest('audio.getAlbums', {
@@ -435,19 +421,14 @@ def AddMusicAlbums(oc, uid, offset=0):
 
 def GetTrackObject(item):
     return TrackObject(
-        key=Callback(MusicPlay, info=JSON.StringFromObject(item)),
-        rating_key='%s.%s' % (Plugin.Identifier, item['id']),
+        key=item['url'],
+        # rating_key='%s.%s' % (Plugin.Identifier, item['id']),
+        # Rating key must be integer because PHT and PlexConnect
+        # does not support playing queue with string rating key
+        rating_key=item['id'],
         title=u'%s' % item['title'],
         artist=u'%s' % item['artist'],
         duration=int(item['duration'])*1000,
-        items=[
-            MediaObject(
-                parts=[PartObject(key=item['url'])],
-                container=Container.MP3,
-                audio_codec=AudioCodec.MP3
-            )
-        ]
-
     )
 
 
@@ -527,20 +508,6 @@ def PhotoList(uid, title, album_id, offset=0):
         ))
 
     return oc
-
-
-@route(PREFIX_P + '/show')
-def PhotoShow(info):
-
-    item = JSON.ObjectFromString(info)
-
-    if not item:
-        raise Ex.MediaNotAvailable
-
-    return ObjectContainer(
-        objects=[GetTrackObject(item)],
-        content='photo'
-    )
 
 
 def AddPhotoAlbums(oc, uid, offset=0):
