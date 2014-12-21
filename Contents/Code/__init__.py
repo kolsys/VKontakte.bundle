@@ -30,10 +30,11 @@ from datetime import date
 
 PREFIX_V = '/video/vkontakte'
 PREFIX_M = '/music/vkontakte'
+PREFIX_P = '/photos/vkontakte'
 
 ART = 'art-default.jpg'
 ICON = 'icon-default.png'
-TITLE = L('Title')
+TITLE = u'%s' % L('Title')
 
 VK_APP_ID = 4510304
 VK_APP_SECRET = 'H4uZCbIucFgmsHKprXla'
@@ -57,46 +58,45 @@ def ValidatePrefs():
 
     if (ValidateAuth()):
         return MessageContainer(
-            L('Success'),
-            L('Authorization complete')
+            header=u'%s' % L('Success'),
+            message=u'%s' % L('Authorization complete')
         )
     else:
-        return MessageContainer(
-            L('Error'),
-            GetBadAuthMessage()
-        )
+        return BadAuthMessage()
 
 
 def ValidateAuth():
-    return (Dict['token'] or (Prefs['username'] and Prefs['password'] and CheckToken()))
-
-
-def GetBadAuthMessage():
-    return L('You must specify correct username and password in preferences')
+    return (Dict['token'] or
+        (Prefs['username'] and Prefs['password'] and CheckToken())
+    )
 
 
 ###############################################################################
 # Video
 ###############################################################################
 
-@handler(PREFIX_V, L('VideoTitle'), R(ART), R(ICON))
+@handler(PREFIX_V, u'%s' % L('VideoTitle'), R(ART), R(ICON))
 def VideoMainMenu():
     if not Dict['token']:
-        return ObjectContainer(header=L('Error'), message=GetBadAuthMessage())
+        return BadAuthMessage()
 
     oc = ObjectContainer(title2=TITLE, no_cache=True)
     oc.add(DirectoryObject(
         key=Callback(VideoListGroups, uid=Dict['user_id']),
-        title=L('My groups')
+        title=u'%s' % L('My groups')
     ))
     oc.add(DirectoryObject(
         key=Callback(VideoListFriends, uid=Dict['user_id']),
-        title=L('My friends')
+        title=u'%s' % L('My friends')
     ))
 
     oc.add(InputDirectoryObject(
-        key=Callback(Search, search_type='video', title=L('Search Video')),
-        title=L('Search'), prompt=L('Search Video')
+        key=Callback(
+            Search,
+            search_type='video',
+            title=u'%s' % L('Search Video')
+        ),
+        title=u'%s' % L('Search'), prompt=u'%s' % L('Search Video')
     ))
 
     return AddVideoAlbums(oc, Dict['user_id'])
@@ -114,7 +114,10 @@ def VideoListFriends(uid, offset=0):
 
 @route(PREFIX_V + '/albums')
 def VideoAlbums(uid, title, offset=0):
-    oc = ObjectContainer(title2=u'%s' % title, replace_parent=(offset>0))
+    oc = ObjectContainer(
+        title2=u'%s' % title,
+        replace_parent=(offset > 0)
+    )
     return AddVideoAlbums(oc, uid, offset)
 
 
@@ -129,10 +132,7 @@ def VideoList(uid, title, album_id=0, offset=0):
     })
 
     if not res or not res['count']:
-        return ObjectContainer(
-            header=L('Error'),
-            message=L('No entries found')
-        )
+        return NoContents()
 
     oc = ObjectContainer(
         title2=(u'%s' % title),
@@ -160,7 +160,7 @@ def VideoList(uid, title, album_id=0, offset=0):
                 album_id=album_id,
                 offset=offset
             ),
-            title=L('Next page')
+            title=u'%s' % L('Next page')
         ))
 
     return oc
@@ -176,10 +176,7 @@ def VideoPlay(uid, vid):
     })
 
     if not res or not res['count']:
-        return ObjectContainer(
-            header=L('Error'),
-            message=L('No entries found')
-        )
+        return NoContents()
 
     item = res['items'][0]
 
@@ -205,14 +202,14 @@ def AddVideoAlbums(oc, uid, offset=0):
 
     if not offset:
         if not has_albums and not len(oc.objects):
-            return VideoList(uid=uid, title=L('All videos'))
+            return VideoList(uid=uid, title=u'%s' % L('All videos'))
         else:
             oc.add(DirectoryObject(
                 key=Callback(
                     VideoList, uid=uid,
-                    title=L('All videos'),
+                    title=u'%s' % L('All videos'),
                 ),
-                title=L('All videos'),
+                title=u'%s' % L('All videos'),
             ))
 
 
@@ -244,7 +241,7 @@ def AddVideoAlbums(oc, uid, offset=0):
                     title=oc.title2,
                     offset=offset
                 ),
-                title=L('More albums')
+                title=u'%s' % L('More albums')
             ))
 
     return oc
@@ -288,24 +285,28 @@ def GetVideoObject(item):
 # Music
 ###############################################################################
 
-@handler(PREFIX_M, L('MusicTitle'), R(ART), R(ICON))
+@handler(PREFIX_M, u'%s' % L('MusicTitle'), R(ART), R(ICON))
 def MusicMainMenu():
     if not Dict['token']:
-        return ObjectContainer(header=L('Error'), message=GetBadAuthMessage())
+        return BadAuthMessage()
 
     oc = ObjectContainer(title2=TITLE, no_cache=True)
     oc.add(DirectoryObject(
         key=Callback(MusicListGroups, uid=Dict['user_id']),
-        title=L('My groups')
+        title=u'%s' % L('My groups')
     ))
     oc.add(DirectoryObject(
         key=Callback(MusicListFriends, uid=Dict['user_id']),
-        title=L('My friends')
+        title=u'%s' % L('My friends')
     ))
 
     oc.add(InputDirectoryObject(
-        key=Callback(Search, search_type='audio', title=L('Search Music')),
-        title=L('Search'), prompt=L('Search Music')
+        key=Callback(
+            Search,
+            search_type='audio',
+            title=u'%s' % L('Search Music')
+        ),
+        title=u'%s' % L('Search'), prompt=u'%s' % L('Search Music')
     ))
 
     return AddMusicAlbums(oc, Dict['user_id'])
@@ -323,7 +324,10 @@ def MusicListFriends(uid, offset=0):
 
 @route(PREFIX_M + '/albums')
 def MusicAlbums(uid, title, offset=0):
-    oc = ObjectContainer(title2=u'%s' % title, replace_parent=(offset>0))
+    oc = ObjectContainer(
+        title2=u'%s' % title,
+        replace_parent=(offset > 0)
+    )
     return AddMusicAlbums(oc, uid, offset)
 
 
@@ -337,10 +341,7 @@ def MusicList(uid, title, album_id=0, offset=0):
     })
 
     if not res or not res['count']:
-        return ObjectContainer(
-            header=L('Error'),
-            message=L('No entries found')
-        )
+        return NoContents()
 
     oc = ObjectContainer(
         title2=(u'%s' % title),
@@ -361,7 +362,7 @@ def MusicList(uid, title, album_id=0, offset=0):
                 album_id=album_id,
                 offset=offset
             ),
-            title=L('Next page')
+            title=u'%s' % L('Next page')
         ))
 
     return oc
@@ -394,14 +395,14 @@ def AddMusicAlbums(oc, uid, offset=0):
 
     if not offset:
         if not has_albums and not len(oc.objects):
-            return MusicList(uid=uid, title=L('All tracks'))
+            return MusicList(uid=uid, title=u'%s' % L('All tracks'))
         else:
             oc.add(PlaylistObject(
                 key=Callback(
                     MusicList, uid=uid,
-                    title=L('All tracks'),
+                    title=u'%s' % L('All tracks'),
                 ),
-                title=L('All tracks'),
+                title=u'%s' % L('All tracks'),
             ))
 
     if has_albums:
@@ -427,7 +428,7 @@ def AddMusicAlbums(oc, uid, offset=0):
                     title=oc.title2,
                     offset=offset
                 ),
-                title=L('More albums')
+                title=u'%s' % L('More albums')
             ))
 
     return oc
@@ -451,10 +452,173 @@ def GetTrackObject(item):
 
 
 ###############################################################################
+# Photos
+###############################################################################
+
+@handler(PREFIX_P, u'%s' % L('PhotosTitle'), R(ART), R(ICON))
+def PhotoMainMenu():
+    if not Dict['token']:
+        return BadAuthMessage()
+
+    oc = ObjectContainer(title2=TITLE, no_cache=True)
+    oc.add(DirectoryObject(
+        key=Callback(PhotoListGroups, uid=Dict['user_id']),
+        title=u'%s' % L('My groups')
+    ))
+    oc.add(DirectoryObject(
+        key=Callback(PhotoListFriends, uid=Dict['user_id']),
+        title=u'%s' % L('My friends')
+    ))
+
+    return AddPhotoAlbums(oc, Dict['user_id'])
+
+
+@route(PREFIX_P + '/groups')
+def PhotoListGroups(uid, offset=0):
+    return GetGroups(PhotoAlbums, PhotoListGroups, uid, offset)
+
+
+@route(PREFIX_P + '/friends')
+def PhotoListFriends(uid, offset=0):
+    return GetFriends(PhotoAlbums, PhotoListFriends, uid, offset)
+
+
+@route(PREFIX_P + '/albums')
+def PhotoAlbums(uid, title, offset=0):
+    oc = ObjectContainer(title2=u'%s' % title, replace_parent=(offset > 0))
+    return AddPhotoAlbums(oc, uid, offset)
+
+
+@route(PREFIX_P + '/list')
+def PhotoList(uid, title, album_id, offset=0):
+    res = ApiRequest('photos.get', {
+        'owner_id': uid,
+        'album_id': album_id,
+        'extended': 0,
+        'photo_sizes': 1,
+        'rev': 1,
+        'count': VK_LIMIT,
+        'offset': offset
+    })
+
+    if not res or not res['count']:
+        return NoContents()
+
+    oc = ObjectContainer(
+        title2=(u'%s' % title),
+        content='photo',
+        replace_parent=(offset > 0)
+    )
+
+    for item in res['items']:
+        oc.add(GetPhotoObject(item))
+
+    offset = int(offset)+VK_LIMIT
+    if offset < res['count']:
+        oc.add(NextPageObject(
+            key=Callback(
+                PhotoList,
+                uid=uid,
+                title=title,
+                album_id=album_id,
+                offset=offset
+            ),
+            title=u'%s' % L('Next page')
+        ))
+
+    return oc
+
+
+@route(PREFIX_P + '/show')
+def PhotoShow(info):
+
+    item = JSON.ObjectFromString(info)
+
+    if not item:
+        raise Ex.MediaNotAvailable
+
+    return ObjectContainer(
+        objects=[GetTrackObject(item)],
+        content='photo'
+    )
+
+
+def AddPhotoAlbums(oc, uid, offset=0):
+
+    albums = ApiRequest('photos.getAlbums', {
+        'owner_id': uid,
+        'need_covers': 1,
+        'photo_sizes': 1,
+        'need_system': 1,
+        'count': VK_LIMIT,
+        'offset': offset
+    })
+
+    has_albums = albums and albums['count']
+    offset = int(offset)
+
+    if has_albums:
+        for item in albums['items']:
+            thumb = ''
+            for size in item['sizes']:
+                if size['type'] == 'p':
+                    thumb = size['src']
+                    break
+
+            oc.add(DirectoryObject(
+                key=Callback(
+                    PhotoList, uid=uid,
+                    title=u'%s' % item['title'],
+                    album_id=item['id']
+                ),
+                summary=item['description'] if 'description' in item else '',
+                title=u'%s (%s)' % (item['title'], item['size']),
+                thumb=thumb,
+            ))
+
+        offset = offset+VK_LIMIT
+        if offset < albums['count']:
+            oc.add(NextPageObject(
+                key=Callback(
+                    PhotoAlbums,
+                    uid=uid,
+                    title=oc.title2,
+                    offset=offset
+                ),
+                title=u'%s' % L('More albums')
+            ))
+
+    if not len(oc.objects):
+        return NoContents()
+
+    return oc
+
+
+def GetPhotoObject(item):
+
+    sizes = {}
+    for size in item['sizes']:
+        sizes[size['type']] = size['src']
+
+    url = ''
+    for size in ['z', 'y', 'x']:
+        if size in sizes:
+            url = sizes[size]
+            break
+
+    return PhotoObject(
+        key=url,
+        rating_key='%s.%s' % (Plugin.Identifier, item['id']),
+        summary=u'%s' % item['text'],
+        thumb=sizes['p'] if 'p' in sizes else ''
+    )
+
+
+###############################################################################
 # Common
 ###############################################################################
 
-def Search(query, title=L('Search'), search_type='video', offset=0):
+def Search(query, title=u'%s' % L('Search'), search_type='video', offset=0):
 
     is_video = search_type == 'video'
 
@@ -474,10 +638,7 @@ def Search(query, title=L('Search'), search_type='video', offset=0):
     res = ApiRequest(search_type+'.search', params)
 
     if not res or not res['count']:
-        return ObjectContainer(
-            header=L('Error'),
-            message=L('No entries found')
-        )
+        return NoContents()
 
     oc = ObjectContainer(
         title2=(u'%s' % title),
@@ -504,10 +665,24 @@ def Search(query, title=L('Search'), search_type='video', offset=0):
                 search_type=search_type,
                 offset=offset
             ),
-            title=L('Next page')
+            title=u'%s' % L('Next page')
         ))
 
     return oc
+
+
+def BadAuthMessage():
+    return MessageContainer(
+        header=u'%s' % L('Error'),
+        message=u'%s' % L('NotAuth')
+    )
+
+
+def NoContents():
+    return ObjectContainer(
+        header=u'%s' % L('Error'),
+        message=u'%s' % L('No entries found')
+    )
 
 
 def NormalizeExternalUrl(url):
@@ -524,7 +699,10 @@ def NormalizeExternalUrl(url):
 
 def GetGroups(callback_action, callback_page, uid, offset):
     '''Get groups container with custom callback'''
-    oc = ObjectContainer(title2=L('My groups'), replace_parent=(offset>0))
+    oc = ObjectContainer(
+        title2=u'%s' % L('My groups'),
+        replace_parent=(offset > 0)
+    )
     groups = ApiRequest('groups.get', {
         'user_id': uid,
         'extended': 1,
@@ -557,7 +735,7 @@ def GetGroups(callback_action, callback_page, uid, offset):
                     uid=uid,
                     offset=offset
                 ),
-                title=L('More groups')
+                title=u'%s' % L('More groups')
             ))
 
     return oc
@@ -565,7 +743,10 @@ def GetGroups(callback_action, callback_page, uid, offset):
 
 def GetFriends(callback_action, callback_page, uid, offset):
     '''Get friends container with custom callback'''
-    oc = ObjectContainer(title2=L('My friends'), replace_parent=(offset>0))
+    oc = ObjectContainer(
+        title2=u'%s' % L('My friends'),
+        replace_parent=(offset > 0)
+    )
     friends = ApiRequest('friends.get', {
         'user_id': uid,
         'fields': 'photo_200_orig',
@@ -599,7 +780,7 @@ def GetFriends(callback_action, callback_page, uid, offset):
                     uid=uid,
                     offset=offset
                 ),
-                title=L('Nex page')
+                title=u'%s' % L('Next page')
             ))
 
     return oc
