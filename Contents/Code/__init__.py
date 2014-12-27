@@ -383,7 +383,7 @@ def AddMusicAlbums(oc, uid, offset=0):
         if not has_albums and not len(oc.objects):
             return MusicList(uid=uid, title=u'%s' % L('All tracks'))
         else:
-            oc.add(PlaylistObject(
+            oc.add(DirectoryObject(
                 key=Callback(
                     MusicList, uid=uid,
                     title=u'%s' % L('All tracks'),
@@ -396,7 +396,7 @@ def AddMusicAlbums(oc, uid, offset=0):
             # display playlist title and number of videos
             title = u'%s: %s' % (L('Album'), item['title'])
 
-            oc.add(PlaylistObject(
+            oc.add(DirectoryObject(
                 key=Callback(
                     MusicList, uid=uid,
                     title=u'%s' % item['title'],
