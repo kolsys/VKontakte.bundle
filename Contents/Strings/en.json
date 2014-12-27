@@ -19,4 +19,11 @@
 	"Title": "VKontakte",
 	"VideoTitle": "VKontakte Video",
 	"NotAuth" : "You must specify correct username and password in preferences",
+	"Username" : "Phone or email",
+	"Password" : "Password",
+	"Search HD only" : "Search HD only",
+	"Allow search adult" : "Allow search adult",
+	"Videos per page" : "Videos per page",
+	"Music per page" : "Music per page",
+	"Photos per page" : "Photos per page",
 }

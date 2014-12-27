@@ -127,7 +127,7 @@ def VideoList(uid, title, album_id=0, offset=0):
         'owner_id': uid,
         'album_id': album_id,
         'width': 320,
-        'count': VK_LIMIT,
+        'count': Prefs['video_per_page'],
         'offset': offset
     })
 
@@ -336,7 +336,7 @@ def MusicList(uid, title, album_id=0, offset=0):
     res = ApiRequest('audio.get', {
         'owner_id': uid,
         'album_id': album_id,
-        'count': VK_LIMIT,
+        'count': Prefs['audio_per_page'],
         'offset': offset
     })
 
@@ -478,7 +478,7 @@ def PhotoList(uid, title, album_id, offset=0):
         'extended': 0,
         'photo_sizes': 1,
         'rev': 1,
-        'count': VK_LIMIT,
+        'count': Prefs['photos_per_page'],
         'offset': offset
     })
 
@@ -592,7 +592,7 @@ def Search(query, title=u'%s' % L('Search'), search_type='video', offset=0):
     params = {
         'sort': 2,
         'offset': offset,
-        'count': VK_LIMIT,
+        'count': Prefs[search_type + '_per_page'],
         'q': query
     }
 
