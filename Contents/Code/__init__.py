@@ -122,14 +122,17 @@ def VideoAlbums(uid, title, offset=0):
 
 
 @route(PREFIX_V + '/list')
-def VideoList(uid, title, album_id=0, offset=0):
-    res = ApiRequest('video.get', {
+def VideoList(uid, title, album_id=None, offset=0):
+    params = {
         'owner_id': uid,
-        'album_id': album_id,
         'width': 320,
         'count': Prefs['video_per_page'],
         'offset': offset
-    })
+    }
+    if album_id is not None:
+        params['album_id'] = album_id
+
+    res = ApiRequest('video.get', params)
 
     if not res or not res['count']:
         return NoContents()
@@ -332,13 +335,17 @@ def MusicAlbums(uid, title, offset=0):
 
 
 @route(PREFIX_M + '/list')
-def MusicList(uid, title, album_id=0, offset=0):
-    res = ApiRequest('audio.get', {
+def MusicList(uid, title, album_id=None, offset=0):
+
+    params = {
         'owner_id': uid,
-        'album_id': album_id,
         'count': Prefs['audio_per_page'],
         'offset': offset
-    })
+    }
+    if album_id is not None:
+        params['album_id'] = album_id
+
+    res = ApiRequest('audio.get', params)
 
     if not res or not res['count']:
         return NoContents()
