@@ -375,6 +375,20 @@ def MusicList(uid, title, album_id=None, offset=0):
     return oc
 
 
+@route(PREFIX_M + '/play')
+def MusicPlay(info):
+
+    item = JSON.ObjectFromString(info)
+
+    if not item:
+        raise Ex.MediaNotAvailable
+
+    return ObjectContainer(
+        objects=[GetTrackObject(item)],
+        content=ContainerContent.Tracks
+    )
+
+
 def AddMusicAlbums(oc, uid, offset=0):
 
     albums = ApiRequest('audio.getAlbums', {
@@ -426,9 +440,10 @@ def AddMusicAlbums(oc, uid, offset=0):
 
     return oc
 
+
 def GetTrackObject(item):
     return TrackObject(
-        key=item['url'],
+        key=Callback(MusicPlay, info=JSON.StringFromObject(item)),
         # rating_key='%s.%s' % (Plugin.Identifier, item['id']),
         # Rating key must be integer because PHT and PlexConnect
         # does not support playing queue with string rating key
@@ -436,6 +451,16 @@ def GetTrackObject(item):
         title=u'%s' % item['title'],
         artist=u'%s' % item['artist'],
         duration=int(item['duration'])*1000,
+        items=[
+            MediaObject(
+                parts=[PartObject(key=item['url'])],
+                container=Container.MP3,
+                audio_codec=AudioCodec.MP3,
+                audio_channels=2,
+                video_codec='',  # Crutch for disable generate parts,
+                optimized_for_streaming=True,
+            )
+        ]
     )
 
 
