@@ -26,7 +26,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from urllib import urlencode
-from datetime import date
 
 PREFIX_V = '/video/vkontakte'
 PREFIX_M = '/music/vkontakte'
@@ -270,7 +269,7 @@ def GetVideoObject(item):
         summary=item['description'],
         thumb=item['photo_320'],
         source_icon=R(ICON),
-        originally_available_at=date.fromtimestamp(item['date']),
+        originally_available_at=Datetime.FromTimestamp(item['date']),
         duration=(item['duration']*1000),
         items=[
             MediaObject(
