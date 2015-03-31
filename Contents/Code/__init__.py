@@ -34,6 +34,9 @@ PREFIX_P = '/photos/vkontakte'
 
 ART = 'art-default.jpg'
 ICON = 'icon-default.png'
+ICON_V = 'icon-video.png'
+ICON_M = 'icon-music.png'
+ICON_P = 'icon-photo.png'
 TITLE = u'%s' % L('Title')
 
 VK_APP_ID = 4510304
@@ -75,7 +78,7 @@ def ValidateAuth():
 # Video
 ###############################################################################
 
-@handler(PREFIX_V, u'%s' % L('VideoTitle'), R(ART), R(ICON))
+@handler(PREFIX_V, u'%s' % L('VideoTitle'), R(ART), R(ICON_V))
 def VideoMainMenu():
     if not Dict['token']:
         return BadAuthMessage()
@@ -288,7 +291,7 @@ def GetVideoObject(item):
 # Music
 ###############################################################################
 
-@handler(PREFIX_M, u'%s' % L('MusicTitle'), R(ART), R(ICON))
+@handler(PREFIX_M, u'%s' % L('MusicTitle'), R(ART), R(ICON_M))
 def MusicMainMenu():
     if not Dict['token']:
         return BadAuthMessage()
@@ -468,7 +471,7 @@ def GetTrackObject(item):
 # Photos
 ###############################################################################
 
-@handler(PREFIX_P, u'%s' % L('PhotosTitle'), R(ART), R(ICON))
+@handler(PREFIX_P, u'%s' % L('PhotosTitle'), R(ART), R(ICON_P))
 def PhotoMainMenu():
     if not Dict['token']:
         return BadAuthMessage()
