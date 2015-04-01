@@ -77,7 +77,7 @@ def ValidateAuth():
 # Video
 ###############################################################################
 
-@handler(PREFIX_V, u'%s' % L('VideoTitle'), R(ART), R(ICON_V))
+@handler(PREFIX_V, u'%s' % L('VideoTitle'), thumb=ICON_V)
 def VideoMainMenu():
     if not Dict['token']:
         return BadAuthMessage()
@@ -290,7 +290,7 @@ def GetVideoObject(item):
 # Music
 ###############################################################################
 
-@handler(PREFIX_M, u'%s' % L('MusicTitle'), R(ART), R(ICON_M))
+@handler(PREFIX_M, u'%s' % L('MusicTitle'), thumb=ICON_M)
 def MusicMainMenu():
     if not Dict['token']:
         return BadAuthMessage()
@@ -470,7 +470,7 @@ def GetTrackObject(item):
 # Photos
 ###############################################################################
 
-@handler(PREFIX_P, u'%s' % L('PhotosTitle'), R(ART), R(ICON_P))
+@handler(PREFIX_P, u'%s' % L('PhotosTitle'), thumb=ICON_P)
 def PhotoMainMenu():
     if not Dict['token']:
         return BadAuthMessage()
