@@ -91,6 +91,10 @@ def VideoMainMenu():
         key=Callback(VideoListFriends, uid=Dict['user_id']),
         title=u'%s' % L('My friends')
     ))
+    oc.add(DirectoryObject(
+        key=Callback(VideoListSubscriptions, uid=Dict['user_id']),
+        title=u'%s' % L('My subscriptions')
+    ))
 
     oc.add(InputDirectoryObject(
         key=Callback(
@@ -107,6 +111,11 @@ def VideoMainMenu():
 @route(PREFIX_V + '/groups')
 def VideoListGroups(uid, offset=0):
     return GetGroups(VideoAlbums, VideoListGroups, uid, offset);
+
+
+@route(PREFIX_V + '/subscriptions')
+def VideoListSubscriptions(uid, offset=0):
+    return GetSubscriptions(VideoAlbums, VideoListSubscriptions, uid, offset)
 
 
 @route(PREFIX_V + '/friends')
@@ -304,6 +313,10 @@ def MusicMainMenu():
         key=Callback(MusicListFriends, uid=Dict['user_id']),
         title=u'%s' % L('My friends')
     ))
+    oc.add(DirectoryObject(
+        key=Callback(MusicListSubscriptions, uid=Dict['user_id']),
+        title=u'%s' % L('My subscriptions')
+    ))
 
     oc.add(InputDirectoryObject(
         key=Callback(
@@ -320,6 +333,11 @@ def MusicMainMenu():
 @route(PREFIX_M + '/groups')
 def MusicListGroups(uid, offset=0):
     return GetGroups(MusicAlbums, MusicListGroups, uid, offset)
+
+
+@route(PREFIX_M + '/subscriptions')
+def MusicListSubscriptions(uid, offset=0):
+    return GetSubscriptions(MusicAlbums, MusicListSubscriptions, uid, offset)
 
 
 @route(PREFIX_M + '/friends')
@@ -484,6 +502,10 @@ def PhotoMainMenu():
         key=Callback(PhotoListFriends, uid=Dict['user_id']),
         title=u'%s' % L('My friends')
     ))
+    oc.add(DirectoryObject(
+        key=Callback(PhotoListSubscriptions, uid=Dict['user_id']),
+        title=u'%s' % L('My subscriptions')
+    ))
 
     return AddPhotoAlbums(oc, Dict['user_id'])
 
@@ -491,6 +513,11 @@ def PhotoMainMenu():
 @route(PREFIX_P + '/groups')
 def PhotoListGroups(uid, offset=0):
     return GetGroups(PhotoAlbums, PhotoListGroups, uid, offset)
+
+
+@route(PREFIX_P + '/subscriptions')
+def PhotoListSubscriptions(uid, offset=0):
+    return GetSubscriptions(PhotoAlbums, PhotoListSubscriptions, uid, offset)
 
 
 @route(PREFIX_P + '/friends')
@@ -692,42 +719,32 @@ def GetGroups(callback_action, callback_page, uid, offset):
         title2=u'%s' % L('My groups'),
         replace_parent=(offset > 0)
     )
-    groups = ApiRequest('groups.get', {
-        'user_id': uid,
-        'extended': 1,
-        'count': VK_LIMIT,
-        'offset': offset
-    })
-    if groups and groups['count']:
-        for item in groups['items']:
-            title = u'%s' % item['name']
-            if 'photo_200' in item:
-                thumb = item['photo_200']
-            else:
-                thumb = R(ICON)
 
-            oc.add(DirectoryObject(
-                key=Callback(
-                    callback_action,
-                    uid=(item['id']*-1),
-                    title=title,
-                ),
-                title=title,
-                thumb=thumb
-            ))
+    return AddSocialObjects(
+        oc=oc,
+        method='groups.get',
+        callback_action=callback_action,
+        callback_page=callback_page,
+        uid=uid,
+        offset=offset
+    )
 
-        offset = int(offset)+VK_LIMIT
-        if offset < groups['count']:
-            oc.add(NextPageObject(
-                key=Callback(
-                    callback_page,
-                    uid=uid,
-                    offset=offset
-                ),
-                title=u'%s' % L('More groups')
-            ))
 
-    return oc
+def GetSubscriptions(callback_action, callback_page, uid, offset):
+    '''Get Subscriptions container with custom callback'''
+    oc = ObjectContainer(
+        title2=u'%s' % L('My subscriptions'),
+        replace_parent=(offset > 0)
+    )
+
+    return AddSocialObjects(
+        oc=oc,
+        method='users.getSubscriptions',
+        callback_action=callback_action,
+        callback_page=callback_page,
+        uid=uid,
+        offset=offset
+    )
 
 
 def GetFriends(callback_action, callback_page, uid, offset):
@@ -736,33 +753,32 @@ def GetFriends(callback_action, callback_page, uid, offset):
         title2=u'%s' % L('My friends'),
         replace_parent=(offset > 0)
     )
-    friends = ApiRequest('friends.get', {
-        'user_id': uid,
-        'fields': 'photo_200_orig',
-        'order': 'hints',
-        'count': VK_LIMIT,
-        'offset': offset
-    })
-    if friends and friends['count']:
-        for item in friends['items']:
-            title = u'%s %s' % (item['first_name'], item['last_name'])
-            if 'photo_200_orig' in item:
-                thumb = item['photo_200_orig']
-            else:
-                thumb = R(ICON)
+    return AddSocialObjects(
+        oc=oc,
+        method='friends.get',
+        callback_action=callback_action,
+        callback_page=callback_page,
+        uid=uid,
+        offset=offset
+    )
 
-            oc.add(DirectoryObject(
-                key=Callback(
-                    callback_action,
-                    uid=item['id'],
-                    title=title,
-                ),
-                title=title,
-                thumb=thumb
-            ))
+
+def AddSocialObjects(oc, method, callback_action, callback_page, uid, offset):
+    items = ApiRequest(method, {
+        'user_id': uid,
+        'extended': 1,
+        'fields': 'photo_200',
+        'count': VK_LIMIT,
+        'offset': offset,
+        'order': 'hints',
+
+    })
+    if items and items['count']:
+        for item in items['items']:
+            oc.add(SocialDirectoryObject(callback_action, item))
 
         offset = int(offset)+VK_LIMIT
-        if offset < friends['count']:
+        if offset < items['count']:
             oc.add(NextPageObject(
                 key=Callback(
                     callback_page,
@@ -773,6 +789,26 @@ def GetFriends(callback_action, callback_page, uid, offset):
             ))
 
     return oc
+
+
+def SocialDirectoryObject(callback_action, item):
+
+    if 'name' in item: # Group or page
+        title = u'%s' % item['name']
+        uid = (item['id']*-1)
+    else:
+        title = u'%s %s' % (item['first_name'], item['last_name'])
+        uid = item['id']
+
+    return DirectoryObject(
+        key=Callback(
+            callback_action,
+            uid=uid,
+            title=title,
+        ),
+        title=title,
+        thumb=item['photo_200'] if 'photo_200' in item else R(ICON)
+    )
 
 
 def ApiRequest(method, params):

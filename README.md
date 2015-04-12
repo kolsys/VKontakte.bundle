@@ -9,7 +9,7 @@
 
 * Видеозаписи, аудиозаписи, фотографии
 * Альбомы
-* Группы и друзья
+* Группы, друзья, подписки
 * Поиск видео и аудиозаписей
 
 
@@ -33,7 +33,7 @@ Current status
 
 * Support video, music and photos
 * Support albums
-* Support friends and groups media content
+* Support friends, groups and subscriptions media content
 * Support video and music searching
 
 
