@@ -181,7 +181,7 @@ def VideoPlay(uid, vid):
     })
 
     if not res or not res['count']:
-        return NoContents()
+        raise Ex.MediaNotAvailable
 
     item = res['items'][0]
 
@@ -254,7 +254,7 @@ def AddVideoAlbums(oc, uid, offset=0):
 def GetVideoObject(item):
     if 'external' in item['files']:
         return URLService.MetadataObjectForURL(
-            NormalizeExternalUrl(item['files']['external'])
+            item['files']['external']
         )
 
     return VideoClipObject(
@@ -684,18 +684,6 @@ def NoContents():
         header=u'%s' % L('Error'),
         message=u'%s' % L('No entries found')
     )
-
-
-def NormalizeExternalUrl(url):
-    # Rutube service crutch
-    if Regex('//rutube.ru/[^/]+/embed/[0-9]+').search(url):
-        url = HTML.ElementFromURL(url, cacheTime=CACHE_1WEEK).xpath(
-            '//link[contains(@rel, "canonical")]'
-        )
-        if url:
-            return url[0].get('href')
-
-    return url
 
 
 def GetGroups(callback_action, callback_page, uid, offset):
