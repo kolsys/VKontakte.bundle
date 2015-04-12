@@ -26,7 +26,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from urllib import urlencode
-from datetime import date
 
 PREFIX_V = '/video/vkontakte'
 PREFIX_M = '/music/vkontakte'
@@ -34,6 +33,9 @@ PREFIX_P = '/photos/vkontakte'
 
 ART = 'art-default.jpg'
 ICON = 'icon-default.png'
+ICON_V = 'icon-video.png'
+ICON_M = 'icon-music.png'
+ICON_P = 'icon-photo.png'
 TITLE = u'%s' % L('Title')
 
 VK_APP_ID = 4510304
@@ -75,7 +77,7 @@ def ValidateAuth():
 # Video
 ###############################################################################
 
-@handler(PREFIX_V, u'%s' % L('VideoTitle'), R(ART), R(ICON))
+@handler(PREFIX_V, u'%s' % L('VideoTitle'), thumb=ICON_V)
 def VideoMainMenu():
     if not Dict['token']:
         return BadAuthMessage()
@@ -179,7 +181,7 @@ def VideoPlay(uid, vid):
     })
 
     if not res or not res['count']:
-        return NoContents()
+        raise Ex.MediaNotAvailable
 
     item = res['items'][0]
 
@@ -252,7 +254,7 @@ def AddVideoAlbums(oc, uid, offset=0):
 def GetVideoObject(item):
     if 'external' in item['files']:
         return URLService.MetadataObjectForURL(
-            NormalizeExternalUrl(item['files']['external'])
+            item['files']['external']
         )
 
     return VideoClipObject(
@@ -267,7 +269,7 @@ def GetVideoObject(item):
         summary=item['description'],
         thumb=item['photo_320'],
         source_icon=R(ICON),
-        originally_available_at=date.fromtimestamp(item['date']),
+        originally_available_at=Datetime.FromTimestamp(item['date']),
         duration=(item['duration']*1000),
         items=[
             MediaObject(
@@ -288,7 +290,7 @@ def GetVideoObject(item):
 # Music
 ###############################################################################
 
-@handler(PREFIX_M, u'%s' % L('MusicTitle'), R(ART), R(ICON))
+@handler(PREFIX_M, u'%s' % L('MusicTitle'), thumb=ICON_M)
 def MusicMainMenu():
     if not Dict['token']:
         return BadAuthMessage()
@@ -468,7 +470,7 @@ def GetTrackObject(item):
 # Photos
 ###############################################################################
 
-@handler(PREFIX_P, u'%s' % L('PhotosTitle'), R(ART), R(ICON))
+@handler(PREFIX_P, u'%s' % L('PhotosTitle'), thumb=ICON_P)
 def PhotoMainMenu():
     if not Dict['token']:
         return BadAuthMessage()
@@ -682,18 +684,6 @@ def NoContents():
         header=u'%s' % L('Error'),
         message=u'%s' % L('No entries found')
     )
-
-
-def NormalizeExternalUrl(url):
-    # Rutube service crutch
-    if Regex('//rutube.ru/[^/]+/embed/[0-9]+').search(url):
-        url = HTML.ElementFromURL(url, cacheTime=CACHE_1WEEK).xpath(
-            '//link[contains(@rel, "canonical")]'
-        )
-        if url:
-            return url[0].get('href')
-
-    return url
 
 
 def GetGroups(callback_action, callback_page, uid, offset):
