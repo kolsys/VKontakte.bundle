@@ -26,6 +26,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from urllib import urlencode
+from updater import Updater
 
 PREFIX_V = '/video/vkontakte'
 PREFIX_M = '/music/vkontakte'
@@ -83,6 +84,9 @@ def VideoMainMenu():
         return BadAuthMessage()
 
     oc = ObjectContainer(title2=TITLE, no_cache=True)
+
+    Updater(PREFIX_V+'/update', oc)
+
     oc.add(DirectoryObject(
         key=Callback(VideoListGroups, uid=Dict['user_id']),
         title=u'%s' % L('My groups')
@@ -305,6 +309,9 @@ def MusicMainMenu():
         return BadAuthMessage()
 
     oc = ObjectContainer(title2=TITLE, no_cache=True)
+
+    Updater(PREFIX_M+'/update', oc)
+
     oc.add(DirectoryObject(
         key=Callback(MusicListGroups, uid=Dict['user_id']),
         title=u'%s' % L('My groups')
@@ -494,6 +501,9 @@ def PhotoMainMenu():
         return BadAuthMessage()
 
     oc = ObjectContainer(title2=TITLE, no_cache=True)
+
+    Updater(PREFIX_P+'/update', oc)
+
     oc.add(DirectoryObject(
         key=Callback(PhotoListGroups, uid=Dict['user_id']),
         title=u'%s' % L('My groups')

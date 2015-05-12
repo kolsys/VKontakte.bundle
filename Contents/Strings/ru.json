@@ -26,4 +26,7 @@
 	"Videos per page" : "Видеозаписей на страницу",
 	"Music per page" : "Аудиозаписей на страницу",
 	"Photos per page" : "Фотографий на страницу",
+	"Update available: %s": "Доступно обновление: %s",
+	"Install latest version of the channel.": "Установить последнюю версию плагина.",
+	"Channel updated to version %s": "Плагин обновлен до версии %s"
 }
