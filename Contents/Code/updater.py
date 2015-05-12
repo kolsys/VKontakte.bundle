@@ -140,8 +140,6 @@ class Updater:
                     Core.storage.save(full, data)
             del zip_data
 
-            HTTP.ClearCache()
-
             return ObjectContainer(
                 header=u'%s' % L('Success'),
                 message=u'%s' % F(
