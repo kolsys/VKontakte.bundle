@@ -185,7 +185,7 @@ def VideoList(uid, title, album_id=None, offset=0):
 
 
 @route(PREFIX_V + '/play')
-def VideoPlay(uid, vid):
+def VideoPlay(uid, vid, **kwargs):
 
     res = ApiRequest('video.get', {
         'owner_id': uid,
@@ -303,7 +303,7 @@ def GetVideoObject(item):
 # Music
 ###############################################################################
 
-@handler(PREFIX_M, u'%s' % L('MusicTitle'), thumb=ICON_M)
+# @handler(PREFIX_M, u'%s' % L('MusicTitle'), thumb=ICON_M)
 def MusicMainMenu():
     if not Dict['token']:
         return BadAuthMessage()
@@ -403,7 +403,7 @@ def MusicList(uid, title, album_id=None, offset=0):
 
 
 @route(PREFIX_M + '/play')
-def MusicPlay(info):
+def MusicPlay(info, **kwargs):
 
     item = JSON.ObjectFromString(info)
 
@@ -656,7 +656,7 @@ def GetPhotoObject(item):
 # Common
 ###############################################################################
 
-def Search(query, title=u'%s' % L('Search'), search_type='video', offset=0):
+def Search(query, title=u'%s' % L('Search'), search_type='video', offset=0, **kwargs):
 
     is_video = search_type == 'video'
 
